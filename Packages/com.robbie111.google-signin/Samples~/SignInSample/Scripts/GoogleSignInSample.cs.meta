@@ -1,10 +1,7 @@
 fileFormatVersion: 2
-guid: ad23e63bfb06a4657a8fbcc5d668487a
-labels:
-- gvh
-timeCreated: 1490808592
-licenseType: Pro
+guid: 0e8c849e0354341de888147afa4fc1b9
 MonoImporter:
+  externalObjects: {}
   serializedVersion: 2
   defaultReferences: []
   executionOrder: 0
