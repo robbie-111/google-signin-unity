@@ -25,19 +25,30 @@ Also, this new system seem like it did not support email hint. And now require W
         };
 ```
 
-Tested in unity 2021.3.21 and unity 6000.0.5
+Requires Unity 2021.3 or newer. Verified on 6000.3.18f1.
 
-Add UPM dependency with branch tag `https://github.com/Thaina/google-signin-unity.git#newmigration`
+## Installation
+
+The package lives in a subfolder of its repository, so the `?path=` query is required:
 
 ```json
 {
   "dependencies": {
-    "com.google.external-dependency-manager": "https://github.com/googlesamples/unity-jar-resolver.git?path=upm",
-    "com.google.signin": "https://github.com/Thaina/google-signin-unity.git#newmigration",
-    ...
-  }
+    "com.robbie111.google-signin": "https://github.com/robbie-111/google-signin-unity.git?path=Packages/com.robbie111.google-signin"
+  },
+  "scopedRegistries": [
+    {
+      "name": "package.openupm.com",
+      "url": "https://package.openupm.com",
+      "scopes": ["com.google.external-dependency-manager"]
+    }
+  ]
 }
 ```
+
+The scoped registry is what resolves `com.google.external-dependency-manager` (EDM4U), which this package depends on. Google does not publish EDM4U to a Unity registry, so OpenUPM's mirror is the only source a `package.json` dependency can resolve from. `com.unity.nuget.newtonsoft-json` comes from Unity's own registry and needs no setup.
+
+Append `#v1.0.0` to the Git URL to pin a release.
 
 Also, [New version of iOS recommend](https://developers.google.com/identity/sign-in/ios/quick-migration-guide#google_sign-in_sdk_v700) that we should set `GIDClientID` and `GIDServerClientID` into Info.plist
 
@@ -69,6 +80,8 @@ Select iOS credential and download at ⬇ button
 ```
 
 ### Document below is original README, some information might be outdated
+
+> Treat everything below as upstream reference text. The Google Cloud Console setup and the Firebase Auth recipe are still accurate; the build and import instructions are not, and the ones that no longer apply have been removed or marked.
 
 # Google Sign-In Unity Plugin
 _Copyright (c) 2017 Google Inc. All rights reserved._
@@ -135,16 +148,15 @@ this yourself.
 
 
 ### Create a new project and import the plugin
-Create a new Unity project and import the `GoogleSignIn-1.0.0.unitypackage` (or the latest version).
+Create a new Unity project and add this package as shown in [Installation](#installation) above.
 This contains native code, C# Unity code needed to call the Google Sign-In API for both Android and iOS.
 
 ### Import the sample scene
-Import the `GoogleSignIn-sample.unitypackage` which contains the sample scene and
-scripts.  This package is not needed if you are integrating Google Sign-in into
-your own application.
+In the Package Manager window, select this package and import the **SignIn Sample**.
+This is not needed if you are integrating Google Sign-In into your own application.
 
 ### Configure the web client id
-1. Open the sample scene in `Assets/SignInSample/MainScene`.
+1. Open the sample scene in `Assets/Samples/Google Sign-In for Unity/<version>/SignIn Sample/MainScene`.
 2. Select the Canvas object in the hierarchy and enter the web client id
 in the __SignInSampleScript__ component.
 
@@ -172,7 +184,7 @@ from the Google Developers website and add it to your XCode project.
 To use the Play Games Services Gamer profile when signing in, you need to edit the
 dependencies in `Assets/GoogleSignIn/Editor/GoogleSignInDependencies.xml`.
 
-Uncomment the play-services-games dependency and re-run the resolution.
+> **Outdated.** The `play-services-games` dependency was removed from `Editor/GoogleSignInDependencies.xml` during the CredentialManager migration, so there is nothing to uncomment. Games-profile sign-in is not currently wired up.
 
 
 ## Using this plugin with Firebase Auth
@@ -218,14 +230,6 @@ The steps are:
       }
     });
 ```
-
-
-## Building the Plugin
-To build the plugin run `./gradlew -PlintAbortOnError build_all`. This builds the support aar
-library with lint warnings as errors and packages the plugin into a .unitypackage file.  It
-also packages the sample scene and script in a separate package.
-
-There's also a shortcut for linux/mac: `./build_all`.
 
 
 ## Questions? Problems?
