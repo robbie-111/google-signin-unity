@@ -1,34 +1,63 @@
-**/.DS_Store
+# The repository root is NOT a Unity project. Only SampleProject/ is.
+# Generated folders are anchored to it explicitly.
+/SampleProject/[Ll]ibrary/
+/SampleProject/[Tt]emp/
+/SampleProject/[Oo]bj/
+/SampleProject/[Bb]uild/
+/SampleProject/[Bb]uilds/
+/SampleProject/[Ll]ogs/
+/SampleProject/[Uu]ser[Ss]ettings/
+/SampleProject/[Mm]emoryCaptures/
+/SampleProject/[Rr]ecordings/
 
-.gradle/
+# External Dependency Manager resolver output — regenerate with the Android Resolver
+# instead of committing it. The single source of truth is
+# Packages/com.robbie111.google-signin/Editor/GoogleSignInDependencies.xml
+/SampleProject/Assets/ExternalDependencyManager/
+/SampleProject/Assets/Plugins/Android/
+/SampleProject/ProjectSettings/AndroidResolverDependencies.xml
+/SampleProject/ProjectSettings/GvhProjectSettings.xml
+
+# IDE / editor
+.vs/
 .idea/
-bin/
-build/
-*.iml
-local.properties
-local.settings
-.externalNativeBuild/
-*.apk
-
+.gradle/
+ExportedObj/
+.consulo/
+*.csproj
+*.unityproj
 *.sln
+*.suo
+*.tmp
+*.user
 *.userprefs
-Library/
-ProjectSettings/
-Temp/
-obj/
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
 
-# Don't check in the resolver
-GoogleSignInPlugin/Assets/PlayServicesResolver/
+# Unity generated meta files for the above
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
 
-# don't checkin client plists
-GoogleSignInPlugin/Assets/Plugins/iOS/client*.plist*
+# Crash reports
+sysinfo.txt
+crashlytics-build.properties
 
-Assembly-CSharp-Editor.csproj
-Assembly-CSharp.csproj
+# Build outputs
+*.apk
+*.aab
+*.unitypackage
+*.app
 
-# don't check in the binaries that are built (for now)
-staging/native/google-signin-cpp
+# Signing material must never be committed
+*.keystore
+*.jks
 
-# don't check in iOS pod generated content
-contents.xcworkspacedata
-staging/native/testapp/testapp.xcodeproj/project.xcworkspace/xcuserdata
+### macOS ###
+.DS_Store
+._*
