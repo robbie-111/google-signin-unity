@@ -17,6 +17,9 @@ First release under the new package id and repository layout.
 - The package now follows the standard UPM layout: runtime code under `Runtime/`, editor code under `Editor/`.
 - Editor code moved into its own assembly (`Robbie111.GoogleSignIn.Editor`, Editor platform only) instead of being compiled into the runtime assembly behind `#if UNITY_EDITOR` guards.
 
+- **Breaking — the sign-in entry points were renamed.** `SignIn()` became `SignInLegacy()` and `SignInSilently()` became `SignIn()`, along with their `Async`/`Future` variants. `SignInSilently` was a misnomer: on Android it maps to `GetGoogleIdOption`, which still shows UI unless `HidePopups` is set. **Existing calls to `SignIn()` keep compiling but change behaviour** — they now take the prefer-existing-account path instead of always showing the picker. Rename them to `SignInLegacy()` to keep the old behaviour.
+- Android `getStatus()` now classifies credential exceptions instead of reporting everything as `INTERNAL_ERROR`. A dismissed account picker raises `GetCredentialCancellationException`, which CredentialManager reports as an exception rather than a cancelled task; it now maps to `CANCELED`, so `Task.IsCanceled` finally fires on Android. `NoCredentialException` maps to `DEVELOPER_ERROR`.
+
 ### Removed
 
 - **The `System.Web` dependency and the `csc.rsp` that pulled it in.** The single use of `HttpUtility.ParseQueryString` in the Editor/Standalone OAuth flow was replaced with a local query-string parser. Consumers no longer have to set Api Compatibility Level to `.NET Framework`; the package builds under the default `.NET Standard 2.1`.

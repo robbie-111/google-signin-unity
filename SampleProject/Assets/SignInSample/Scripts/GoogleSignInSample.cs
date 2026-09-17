@@ -55,9 +55,9 @@ public class GoogleSignInSample : MonoBehaviour
     {
         GoogleSignIn.Configuration = configuration;
         GoogleSignIn.Configuration.UseGameSignIn = false;
-        AddStatusText("Calling SignIn");
+        AddStatusText("Calling SignInLegacy");
 
-        GoogleSignIn.DefaultInstance.SignIn().ContinueWith(OnAuthenticationFinished,
+        GoogleSignIn.DefaultInstance.SignInLegacy().ContinueWith(OnAuthenticationFinished,
             TaskScheduler.FromCurrentSynchronizationContext());
     }
 
@@ -108,9 +108,9 @@ public class GoogleSignInSample : MonoBehaviour
     {
         GoogleSignIn.Configuration = configuration;
         GoogleSignIn.Configuration.UseGameSignIn = false;
-        AddStatusText("Calling SignInSilently");
+        AddStatusText("Calling SignIn");
 
-        GoogleSignIn.DefaultInstance.SignInSilently().ContinueWith(OnAuthenticationFinished,
+        GoogleSignIn.DefaultInstance.SignIn().ContinueWith(OnAuthenticationFinished,
             TaskScheduler.FromCurrentSynchronizationContext());
     }
 
@@ -121,9 +121,9 @@ public class GoogleSignInSample : MonoBehaviour
         GoogleSignIn.Configuration.UseGameSignIn = true;
         GoogleSignIn.Configuration.RequestIdToken = false;
 
-        AddStatusText("Calling Games SignIn");
+        AddStatusText("Calling Games SignInLegacy");
 
-        GoogleSignIn.DefaultInstance.SignIn().ContinueWith(OnAuthenticationFinished,
+        GoogleSignIn.DefaultInstance.SignInLegacy().ContinueWith(OnAuthenticationFinished,
             TaskScheduler.FromCurrentSynchronizationContext());
     }
 

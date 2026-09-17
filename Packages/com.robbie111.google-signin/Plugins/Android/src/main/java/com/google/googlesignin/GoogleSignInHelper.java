@@ -57,7 +57,7 @@ import java.util.function.Function;
 /**
  * Helper class used by the native C++ code to interact with Google Sign-in API.
  * The general flow is
- * Call configure, then one of signIn or signInSilently.
+ * Call configure, then one of signInLegacy or signIn.
  */
 public class GoogleSignInHelper {
 
@@ -153,7 +153,7 @@ public class GoogleSignInHelper {
 
     signInFunction = new Function<Boolean, Task<AuthorizationResult>>() {
       @Override
-      public Task<AuthorizationResult> apply(@NonNull Boolean silent) {
+      public Task<AuthorizationResult> apply(@NonNull Boolean legacy) {
         if(isPending()) {
           TaskCompletionSource<AuthorizationResult> source = new TaskCompletionSource<>();
           source.trySetException(new Exception("Last task still pending"));
@@ -165,7 +165,11 @@ public class GoogleSignInHelper {
         GetCredentialRequest.Builder getCredentialRequestBuilder = new GetCredentialRequest.Builder()
                 .setPreferImmediatelyAvailableCredentials(hideUiPopups);
 
-        if(silent) {
+        if(legacy) {
+          GetSignInWithGoogleOption.Builder getSignInWithGoogleOptionBuilder = new GetSignInWithGoogleOption.Builder(webClientId);
+          getCredentialRequestBuilder.addCredentialOption(getSignInWithGoogleOptionBuilder.build());
+        }
+        else {
           GetGoogleIdOption.Builder getGoogleIdOptionBuilder = new GetGoogleIdOption.Builder()
                   .setFilterByAuthorizedAccounts(hideUiPopups)
                   .setAutoSelectEnabled(hideUiPopups);
@@ -177,10 +181,6 @@ public class GoogleSignInHelper {
             getGoogleIdOptionBuilder.setServerClientId(webClientId);
 
           getCredentialRequestBuilder.addCredentialOption(getGoogleIdOptionBuilder.build());
-        }
-        else {
-          GetSignInWithGoogleOption.Builder getSignInWithGoogleOptionBuilder = new GetSignInWithGoogleOption.Builder(webClientId);
-          getCredentialRequestBuilder.addCredentialOption(getSignInWithGoogleOptionBuilder.build());
         }
 
         TaskCompletionSource<GetCredentialResponse> source = new TaskCompletionSource<>();
@@ -251,13 +251,15 @@ public class GoogleSignInHelper {
     };
   }
 
-  public static Task<AuthorizationResult> signIn() {
-    task = signInFunction.apply(false);
+  /** Always presents the Sign in with Google picker. */
+  public static Task<AuthorizationResult> signInLegacy() {
+    task = signInFunction.apply(true);
     return task;
   }
 
-  public static Task<AuthorizationResult> signInSilently() {
-    task = signInFunction.apply(true);
+  /** Prefers an already authorized account and may complete without any UI. */
+  public static Task<AuthorizationResult> signIn() {
+    task = signInFunction.apply(false);
     return task;
   }
 

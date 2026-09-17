@@ -105,6 +105,18 @@ GoogleSignIn.DefaultInstance.SignIn()
   .ContinueWith(OnAuthenticationFinished, TaskScheduler.FromCurrentSynchronizationContext());
 ```
 
+### Two sign-in entry points, and why `SignInSilently` is gone
+
+`SignInLegacy()` always presents the account picker; `SignIn()` prefers an already authorized account and may complete with no UI at all. The older name `SignInSilently` was dropped because on Android it was never actually silent — `GetGoogleIdOption` still shows UI unless `HidePopups` is set.
+
+| | `SignInLegacy()` | `SignIn()` |
+|---|---|---|
+| Android | `GetSignInWithGoogleOption` | `GetGoogleIdOption` (filter by authorized accounts, auto-select) |
+| iOS | `signInWithPresentingViewController` | `restorePreviousSignIn` |
+| Editor / Standalone | loopback OAuth flow | replay of the `SessionState` token cache |
+
+The reference fork this mirrors collapsed both into the interactive call on iOS and in the editor, orphaning `restorePreviousSignIn`. That was not copied — here the two paths stay genuinely different on every backend.
+
 ### Android (`Runtime/Impl/GoogleSignInImpl.cs:98-229`)
 
 Pure JNI, **no `UnitySendMessage` anywhere in the repo**. C# calls the all-static Java class `com.google.googlesignin.GoogleSignInHelper` (`Plugins/Android/src/main/java/com/google/googlesignin/GoogleSignInHelper.java`, made static so sign-in can repeat), and receives results through `SignInListener : AndroidJavaProxy` implementing `IListener`.
@@ -138,6 +150,7 @@ Changes here are only correct if both sides move together:
 | The `IListener` Java interface | `SignInListener : AndroidJavaProxy` in `Runtime/Impl/GoogleSignInImpl.cs:130-155` — method names are matched by string at runtime |
 | `GoogleSignInConfiguration` fields | `GoogleSignIn_Configure` on **both** impls plus the Java `configure` parameter list |
 | `GoogleSignInStatusCode` | the iOS error mapping at `GoogleSignIn.mm:31-50` and Java `getStatus()` |
+| A sign-in entry point name | all four layers move together: Java `signInLegacy`/`signIn`, the `CallStatic` strings and `DllImport` names in `Runtime/Impl/GoogleSignInImpl.cs`, the `extern "C"` exports in `Plugins/iOS/GoogleSignIn.mm`, `ISignInImpl`, and the facade |
 | Android/iOS SDK versions | `Editor/GoogleSignInDependencies.xml` (currently `androidx.credentials 1.3.0`, `googleid 1.1.1`, `play-services-auth 21.3.0`; iOS GoogleSignIn 9.0.0 via both an `iosPod` and a `remoteSwiftPackage` with `replacesPod`) — the SPM entry needs EDM4U ≥ 1.2.187, which is why `package.json` pins it |
 
 ## iOS Info.plist pipeline
@@ -170,6 +183,7 @@ Pre-existing, not introduced by recent work — worth flagging rather than silen
 - `Runtime/link.xml` declares the type as `UnityEngine.AndroidJNIModule.AndroidJavaObject`, but `AndroidJNIModule` is the **assembly**, not a namespace; the real type is `UnityEngine.AndroidJavaObject`. As written the rule matches nothing and the IL2CPP preservation is silently inert — which is likely why the discarded-tuple hack in `NativeFuture.cs` exists to defeat tree-shaking.
 - `Runtime/GoogleSignIn.cs:52-56` logs "This platform is not supported" on Standalone/Editor targets that *are* supported by `GoogleSignInImplEditor`.
 - `Disconnect()` and `EnableDebugLogging()` throw `NotImplementedException` on the editor impl.
+- Java `getStatus()` maps `NoCredentialException` to `DEVELOPER_ERROR`. `SIGN_IN_REQUIRED` would describe "no Google account on the device" better, but the mapping is kept to match the fork it came from.
 - The editor `HttpListener` is never stopped or disposed — one leak per sign-in attempt.
 - `GoogleSignInImplEditor` keeps `Pending`/`Status`/`Result` as instance state on a singleton, so concurrent `SignIn()` and `SignInSilently()` clobber each other.
 - The lower half of the package `README.md` is explicitly marked as upstream reference text and is partly outdated.

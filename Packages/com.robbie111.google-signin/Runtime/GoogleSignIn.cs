@@ -26,7 +26,7 @@ namespace Google {
   /// </summary>
   /// <remarks>This class implements the GoogleSignInAPI for Unity.
   /// Typical usage is to set the Configuration options as needed, then
-  /// get the DefaultInstance and call signIn or signInSilently.  See
+  /// get the DefaultInstance and call SignInLegacy or SignIn.  See
   /// the <a href="https://developers.google.com/identity">
   /// Google Sign-In API documentation for more details.</a>
   /// <para>
@@ -41,7 +41,7 @@ namespace Google {
   ///   GoogleSignIn.Configuration = configuration;
   ///   GoogleSignIn.Configuration.UseGameSignIn = false;
   ///   GoogleSignIn.Configuration.RequestIdToken = true;
-  ///   GoogleSignIn.DefaultInstance.SignIn().ContinueWith(
+  ///   GoogleSignIn.DefaultInstance.SignInLegacy().ContinueWith(
   ///           OnAuthenticationFinished);
   /// }
   /// </code>
@@ -112,6 +112,26 @@ namespace Google {
     /// popups and consent prompts based on the state of authentication and
     /// the requested elements.
     /// </remarks>
+    public Task<GoogleSignInUser> SignInLegacy() {
+      var tcs = new TaskCompletionSource<GoogleSignInUser>();
+      SignInHelperObject.Instance.StartCoroutine(impl.SignInLegacy().WaitForResult(tcs));
+      return tcs.Task;
+    }
+
+    public Task<GoogleSignInUser> SignInLegacyAsync() {
+      var tcs = new TaskCompletionSource<GoogleSignInUser>();
+      impl.SignInLegacy().WaitForResultAsync(tcs).ContinueWith((task) => {});
+      return tcs.Task;
+    }
+
+    public Future<GoogleSignInUser> SignInLegacyFuture() => impl.SignInLegacy();
+
+    /// <summary>Starts the silent authentication process.</summary>
+    /// <remarks>
+    /// The authenication process is started and will attempt to sign in without
+    /// displaying any UI.  If this cannot be done, the developer should call
+    /// SignInLegacy().
+    /// </remarks>
     public Task<GoogleSignInUser> SignIn() {
       var tcs = new TaskCompletionSource<GoogleSignInUser>();
       SignInHelperObject.Instance.StartCoroutine(impl.SignIn().WaitForResult(tcs));
@@ -125,26 +145,6 @@ namespace Google {
     }
 
     public Future<GoogleSignInUser> SignInFuture() => impl.SignIn();
-
-    /// <summary>Starts the silent authentication process.</summary>
-    /// <remarks>
-    /// The authenication process is started and will attempt to sign in without
-    /// displaying any UI.  If this cannot be done, the developer should call
-    /// SignIn().
-    /// </remarks>
-    public Task<GoogleSignInUser> SignInSilently() {
-      var tcs = new TaskCompletionSource<GoogleSignInUser>();
-      SignInHelperObject.Instance.StartCoroutine(impl.SignInSilently().WaitForResult(tcs));
-      return tcs.Task;
-    }
-
-    public Task<GoogleSignInUser> SignInSilentlyAsync() {
-      var tcs = new TaskCompletionSource<GoogleSignInUser>();
-      impl.SignInSilently().WaitForResultAsync(tcs).ContinueWith((task) => {});
-      return tcs.Task;
-    }
-
-    public Future<GoogleSignInUser> SignInSilentlyFuture() => impl.SignInSilently();
 
     /// <summary>
     /// Signs out the User.
@@ -205,8 +205,8 @@ namespace Google {
   }
 
   internal interface ISignInImpl {
+    Future<GoogleSignInUser> SignInLegacy();
     Future<GoogleSignInUser> SignIn();
-    Future<GoogleSignInUser> SignInSilently();
     void EnableDebugLogging(bool flag);
     void SignOut();
     void Disconnect();

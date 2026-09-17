@@ -253,7 +253,7 @@ static SignInResult *startSignIn() {
 /**
  * Sign-In.  The return value is a pointer to the currentResult object.
  */
-void *GoogleSignIn_SignIn() {
+void *GoogleSignIn_SignInLegacy() {
   SignInResult *result = startSignIn();
   if (!result) {
     [[GIDSignIn sharedInstance] signInWithPresentingViewController:UnityGetGLViewController()
@@ -272,7 +272,7 @@ void *GoogleSignIn_SignIn() {
  * Attempt a silent sign-in. Return value is the pointer to the currentResult
  * object.
  */
-void *GoogleSignIn_SignInSilently() {
+void *GoogleSignIn_SignIn() {
   SignInResult *result = startSignIn();
   if (!result) {
       [[GIDSignIn sharedInstance] restorePreviousSignInWithCompletion:^(GIDGoogleUser *user, NSError *error) {

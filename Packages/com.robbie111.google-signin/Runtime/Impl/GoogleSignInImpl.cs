@@ -63,8 +63,8 @@ namespace Google.Impl {
 	/// popups and consent prompts based on the state of authentication and
 	/// the requested elements.
 	/// </remarks>
-	public Future<GoogleSignInUser> SignIn() {
-		IntPtr nativeFuture = GoogleSignIn_SignIn(SelfPtr());
+	public Future<GoogleSignInUser> SignInLegacy() {
+		IntPtr nativeFuture = GoogleSignIn_SignInLegacy(SelfPtr());
 		return new Future<GoogleSignInUser>(new NativeFuture(nativeFuture));
 	}
 
@@ -76,8 +76,8 @@ namespace Google.Impl {
 	/// popups and consent prompts based on the state of authentication and
 	/// the requested elements.
 	/// </remarks>
-	public Future<GoogleSignInUser> SignInSilently() {
-		IntPtr nativeFuture = GoogleSignIn_SignInSilently(SelfPtr());
+	public Future<GoogleSignInUser> SignIn() {
+		IntPtr nativeFuture = GoogleSignIn_SignIn(SelfPtr());
 		return new Future<GoogleSignInUser>(new NativeFuture(nativeFuture));
 	}
 
@@ -157,14 +157,14 @@ namespace Google.Impl {
 
 	static void GoogleSignIn_EnableDebugLogging(HandleRef self, bool flag) => GoogleSignInHelper.CallStatic("enableDebugLogging",flag);
 
+	static IntPtr GoogleSignIn_SignInLegacy(HandleRef self)
+	{
+		return GoogleSignInHelper.CallStatic<AndroidJavaObject>("signInLegacy").GetRawObject();
+	}
+
 	static IntPtr GoogleSignIn_SignIn(HandleRef self)
 	{
 		return GoogleSignInHelper.CallStatic<AndroidJavaObject>("signIn").GetRawObject();
-	}
-
-	static IntPtr GoogleSignIn_SignInSilently(HandleRef self)
-	{
-		return GoogleSignInHelper.CallStatic<AndroidJavaObject>("signInSilently").GetRawObject();
 	}
 
 	static void GoogleSignIn_Signout(HandleRef self)
@@ -253,10 +253,10 @@ namespace Google.Impl {
 		int scopeCount, string accountName);
 
 	[DllImport(DllName)]
-	static extern IntPtr GoogleSignIn_SignIn(HandleRef self);
+	static extern IntPtr GoogleSignIn_SignInLegacy(HandleRef self);
 
 	[DllImport(DllName)]
-	static extern IntPtr GoogleSignIn_SignInSilently(HandleRef self);
+	static extern IntPtr GoogleSignIn_SignIn(HandleRef self);
 
 	[DllImport(DllName)]
 	static extern void GoogleSignIn_Signout(HandleRef self);

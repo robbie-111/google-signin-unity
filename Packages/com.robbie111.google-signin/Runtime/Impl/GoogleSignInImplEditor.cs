@@ -44,7 +44,7 @@ namespace Google.Impl
       throw new NotImplementedException();
     }
 
-    public Future<GoogleSignInUser> SignIn()
+    public Future<GoogleSignInUser> SignInLegacy()
     {
       SigningIn();
       return new Future<GoogleSignInUser>(this);
@@ -61,7 +61,7 @@ namespace Google.Impl
 #endif
     }
 
-    public Future<GoogleSignInUser> SignInSilently()
+    public Future<GoogleSignInUser> SignIn()
     {
       Status = GoogleSignInStatusCode.SIGN_IN_REQUIRED;
 #if UNITY_EDITOR 
