@@ -1,16 +1,23 @@
 {
-    "name": "com.google.signin",
-    "displayName": "Google Signin",
-    "version": "0.9.0",
+    "name": "com.robbie111.google-signin",
+    "version": "1.0.0",
+    "displayName": "Google Sign-In for Unity",
+    "description": "Google Sign-In for Unity. Android uses CredentialManager + AuthorizationClient, iOS uses GIDSignIn, and Editor/Standalone uses a loopback OAuth flow.",
     "unity": "2021.3",
-    "description": "Google Signin for android, ios ,desktop",
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/robbie-111/google-signin-unity.git"
+    },
     "keywords": [
         "google",
-        "signin"
+        "signin",
+        "oauth",
+        "authentication"
     ],
     "dependencies": {
         "com.unity.nuget.newtonsoft-json": "3.2.1",
-		"com.google.external-dependency-manager": "1.2.187"
+        "com.google.external-dependency-manager": "1.2.187"
     },
     "samples": [
         {

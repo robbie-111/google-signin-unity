@@ -1,0 +1,9 @@
+{
+    "name": "Robbie111.GoogleSignIn.Editor",
+    "references": [
+        "Robbie111.GoogleSignIn"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ]
+}
