@@ -27,6 +27,8 @@ import androidx.credentials.GetCredentialRequest;
 import androidx.credentials.GetCredentialResponse;
 import androidx.credentials.exceptions.ClearCredentialException;
 import androidx.credentials.exceptions.GetCredentialException;
+import androidx.credentials.exceptions.GetCredentialCancellationException;
+import androidx.credentials.exceptions.NoCredentialException;
 
 import com.google.android.gms.auth.api.identity.AuthorizationRequest;
 import com.google.android.gms.auth.api.identity.AuthorizationResult;
@@ -92,7 +94,19 @@ public class GoogleSignInHelper {
     Exception e = task.getException();
     if(e != null)
     {
-      logError("onFailure with INTERNAL_ERROR : " + e.getClass().toString() + " " + e.getMessage());
+      // CredentialManager reports a dismissed account picker as an exception rather than
+      // a cancelled task, so it has to be classified here or the caller sees an internal error.
+      if(e instanceof GetCredentialCancellationException)
+      {
+        logDebug("sign-in cancelled by the user : " + e.getMessage());
+        return CommonStatusCodes.CANCELED;
+      }
+
+      if(e instanceof NoCredentialException)
+        return CommonStatusCodes.DEVELOPER_ERROR;
+
+      logError("onFailure with Class : " + e.getClass().toString());
+      logError("onFailure with Message : " + e.getMessage());
       return CommonStatusCodes.INTERNAL_ERROR;
     }
 
