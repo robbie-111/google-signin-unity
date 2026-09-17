@@ -102,6 +102,29 @@ namespace Google.Impl
       return new Future<GoogleSignInUser>(this);
     }
 
+    // Minimal stand-in for System.Web.HttpUtility.ParseQueryString, which is only
+    // available under the .NET Framework api compatibility level. Matches its
+    // decoding behaviour: '+' becomes a space and percent escapes are unescaped.
+    static Dictionary<string,string> ParseQueryString(string query)
+    {
+      var result = new Dictionary<string,string>();
+      if(string.IsNullOrEmpty(query))
+        return result;
+
+      foreach(var pair in query.TrimStart('?').Split('&'))
+      {
+        if(pair.Length == 0)
+          continue;
+
+        var index = pair.IndexOf('=');
+        var key = Uri.UnescapeDataString((index < 0 ? pair : pair.Substring(0,index)).Replace('+',' '));
+        var value = index < 0 ? string.Empty : Uri.UnescapeDataString(pair.Substring(index + 1).Replace('+',' '));
+        result[key] = value;
+      }
+
+      return result;
+    }
+
     static HttpListener BindLocalHostFirstAvailablePort()
     {
       ushort minPort = 49215;
@@ -151,8 +174,8 @@ namespace Google.Impl
           Debug.Log(task);
           var context = task.Result;
           var queryString = context.Request.Url.Query;
-          var queryDictionary = System.Web.HttpUtility.ParseQueryString(queryString);
-          if(queryDictionary == null || queryDictionary.Get("code") is not string code || string.IsNullOrEmpty(code))
+          var queryDictionary = ParseQueryString(queryString);
+          if(!queryDictionary.TryGetValue("code",out var code) || string.IsNullOrEmpty(code))
           {
             Status = GoogleSignInStatusCode.INVALID_ACCOUNT;
 
