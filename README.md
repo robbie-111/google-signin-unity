@@ -6,7 +6,7 @@ A fork of [googlesamples/google-signin-unity](https://github.com/googlesamples/g
 
 - **Android** — migrated off the deprecated `GoogleSignInAccount` to `CredentialManager` + `AuthorizationClient`.
 - **iOS** — GoogleSignIn-iOS 9.x (`GIDSignIn`), delivered through Swift Package Manager.
-- **Editor / Standalone** — a loopback OAuth flow, which upstream does not provide.
+- **Editor / Standalone** — Google Identity Services in the system browser, returning an ID token through a localhost page without a client secret. See the [desktop setup](Packages/com.robbie111.google-signin/README.md#editor--desktop-sign-in).
 
 ## Repository layout
 

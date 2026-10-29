@@ -269,18 +269,10 @@ void *GoogleSignIn_SignInLegacy() {
 }
 
 /**
- * Attempt a silent sign-in. Return value is the pointer to the currentResult
- * object.
+ * Explicit sign-in, identical to SignInLegacy on iOS.
  */
 void *GoogleSignIn_SignIn() {
-  SignInResult *result = startSignIn();
-  if (!result) {
-      [[GIDSignIn sharedInstance] restorePreviousSignInWithCompletion:^(GIDGoogleUser *user, NSError *error) {
-        [[GoogleSignInHandler sharedInstance] signIn:[GIDSignIn sharedInstance] didSignInForUser:user withError:error];
-    }];
-    result = currentResult_.get();
-  }
-  return result;
+  return GoogleSignIn_SignInLegacy();
 }
 
 void GoogleSignIn_Signout() {

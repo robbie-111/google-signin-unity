@@ -31,19 +31,28 @@ namespace Google {
     /// </remarks>
     public bool UseGameSignIn = false;
 #if UNITY_EDITOR || UNITY_STANDALONE
-    /// <summary>Client Secret for used in editor and desktop platform</summary>
-    /// <remarks>Required for requesting auth code or id token in editor</remarks>
+    /// <summary>Legacy field retained for source compatibility.</summary>
+    /// <remarks>Ignored. Editor and desktop GIS sign-in does not require a client secret.</remarks>
     public string ClientSecret = null;
+    /// <summary>Fixed localhost port for the Editor and desktop GIS login page.</summary>
+    /// <remarks>Register http://localhost and http://localhost:PORT as authorized
+    /// JavaScript origins for WebClientId. An occupied port fails sign-in;
+    /// a different port is never selected automatically.</remarks>
+    public int DesktopLoginPort = 49215;
 #endif
     /// <summary>Web client id associated with this app.</summary>
     /// <remarks>Required for requesting auth code or id token.</remarks>
     public string WebClientId = null;
     /// <summary>Set to true for getting an auth code when authenticating.
     /// </summary>
+    /// <remarks>Not supported by Editor/desktop GIS sign-in; requesting an auth
+    /// code there returns DEVELOPER_ERROR.</remarks>
     public bool RequestAuthCode = false;
     /// <summary>Set to true to request to reset the refresh token.
     ///   Causes re-consent.
     /// </summary>
+    /// <remarks>Ignored on Editor/desktop, where both sign-in methods always
+    /// start the same interactive GIS flow without a token cache.</remarks>
     public bool ForceTokenRefresh = false;
     /// <summary>Request email address, requires consent.</summary>
     public bool RequestEmail = false;

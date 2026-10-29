@@ -29,10 +29,9 @@ public class GoogleSignInSample : MonoBehaviour
     public string webClientId = "<your client id here>";
 
 #if UNITY_EDITOR || UNITY_STANDALONE
-    // The desktop flow exchanges the auth code itself, so it needs the secret.
-    // On device the iOS client ID comes from GIDClientID in Info.plist, which
-    // PListProcessor writes at post-build time.
-    public string clientSecret = "";
+    // Register http://localhost and http://localhost:49215 as authorized
+    // JavaScript origins for the web client ID. No client secret is needed.
+    public int desktopLoginPort = 49215;
 #endif
 
     private GoogleSignInConfiguration configuration;
@@ -44,7 +43,7 @@ public class GoogleSignInSample : MonoBehaviour
         configuration = new GoogleSignInConfiguration
         {
 #if UNITY_EDITOR || UNITY_STANDALONE
-            ClientSecret = clientSecret,
+            DesktopLoginPort = desktopLoginPort,
 #endif
             WebClientId = webClientId,
             RequestIdToken = true
@@ -100,10 +99,13 @@ public class GoogleSignInSample : MonoBehaviour
         {
             AddStatusText(task.Result.DisplayName);
             AddStatusText(task.Result.UserId);
-            AddStatusText(task.Result.IdToken);
+            // Pass task.Result.IdToken to your backend; do not write tokens to logs.
+            AddStatusText(string.IsNullOrEmpty(task.Result.IdToken) ? "No ID token returned" : "ID token received");
         }
     }
 
+    // Keep this historical method name for serialized scene button bindings.
+    // SignIn is an explicit login request, not a silent or cache-only login.
     public void OnSignInSilently()
     {
         GoogleSignIn.Configuration = configuration;

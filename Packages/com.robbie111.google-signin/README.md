@@ -16,16 +16,74 @@ Also, this new system seem like it did not support email hint. And now require W
             RequestEmail = true,
             RequestProfile = true,
             RequestIdToken = true,
-            RequestAuthCode = true,
+            RequestAuthCode = false, // Editor/desktop GIS returns ID tokens only
             // must be web client ID, not android client ID
             WebClientId = "XXXXXXXXX-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com",
 #if UNITY_EDITOR || UNITY_STANDALONE
-            ClientSecret = "XXXXXX-xxxXXXxxxXXXxxx-xxxxXXXXX" // optional for windows/macos and test in editor
+            DesktopLoginPort = 49215 // optional; this is the default
 #endif
         };
 ```
 
-Requires Unity 2021.3 or newer. Verified on 6000.3.18f1.
+Requires Unity 2021.3 or newer. The sample project uses 6000.3.18f1.
+
+## Sign-in behavior
+
+This package supports explicit sign-in requests only. `SignIn()` and
+`SignInLegacy()` use the same interactive flow on iOS, Editor and desktop.
+Only Android retains separate credential request paths for the two methods.
+The Async and Future variants follow the same platform behavior. There is no
+silent or cache-only login API.
+
+## Editor / desktop sign-in
+
+Editor and Windows/macOS/Linux standalone players use Google Identity Services (GIS)
+in the system browser. Set `WebClientId` to an OAuth client of type **Web application**
+and set `RequestIdToken = true`. A client secret is not required; the legacy
+`ClientSecret` field is retained for source compatibility but is ignored.
+
+In Google Cloud Console, add both entries to **Authorized JavaScript origins**:
+
+```text
+http://localhost
+http://localhost:49215
+```
+
+No **Authorized redirect URI** is required for this implementation: the GIS button
+uses popup mode and a JavaScript callback, then posts the returned `credential` to
+the local Unity listener. If you change `DesktopLoginPort`, register the matching
+origin as well. The port is fixed per configuration; if another process occupies
+it, sign-in reports `DEVELOPER_ERROR` instead of choosing an unregistered port.
+
+Both `SignIn()` and `SignInLegacy()` open a local page with the official Google sign-in button and a
+cancel button. Click the Google button, choose an account, then return to Unity
+when the page reports success. The listener accepts one sign-in at a time, closes
+after completion, and times out after 120 seconds if no result arrives. Closing
+the browser tab alone may therefore finish as `TIMEOUT`; the page's cancel button
+or `SignOut()` completes the pending request as `CANCELED`.
+
+The result contains `IdToken` when requested, plus `UserId` and `DisplayName` from
+the JWT claims. `RequestEmail` and `RequestProfile` control the remaining profile
+fields. No token-exchange or user-info API call is made. `RequestAuthCode = true`
+is rejected on Editor/desktop because this flow does not return authorization
+codes or access/refresh tokens. Additional Google API scopes are not requested.
+
+Neither method reuses a cached token; each call starts the same explicit browser
+login. `ForceTokenRefresh` is retained for compatibility but has no effect on
+Editor/desktop. `SignOut()` cancels a pending request and releases its listener.
+It does not sign the browser out of Google. `Disconnect()` is not implemented
+for this desktop flow.
+
+The localhost response is bound to its request using a random session path, origin
+and nonce checks. JWT issuer, audience and expiry are checked for response matching,
+**not cryptographic signature verification**. Send the original ID
+token to your backend, and verify Google's signature and token claims there before
+trusting the identity. Do not log the token. Android retains its existing native
+request paths; both iOS methods call `signInWithPresentingViewController`.
+
+References: [GIS setup](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid),
+[JavaScript API](https://developers.google.com/identity/gsi/web/reference/js-reference),
+[server-side ID-token verification](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token).
 
 ## Installation
 
@@ -195,7 +253,7 @@ Make sure to copy the google-services.json and/or GoogleService-Info.plist to yo
 Then to use Google SignIn with Firebase Auth, you need to request an ID token when authenticating.
 The steps are:
 1. Configure Google SignIn to request an id token and set the web client id as described above.
-2. Call __SignIn()__ (or __SignInSilently()__).
+2. Call __SignIn()__ (or __SignInLegacy()__).
 3. When handling the response, use the ID token to create a Firebase Credential.
 4. Call Firebase Auth method  __SignInWithCredential()__.
 
