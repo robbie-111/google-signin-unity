@@ -8,7 +8,7 @@ A fork of `googlesamples/google-signin-unity`, shipped as a **source-only UPM pa
 
 - **Android** — migrated off the deprecated `GoogleSignInAccount` to `CredentialManager` + `AuthorizationClient`.
 - **iOS** — GoogleSignIn-iOS 9.x (`GIDSignIn`), delivered via Swift Package Manager.
-- **Editor / Standalone** — a loopback-`HttpListener` OAuth flow that does not exist upstream.
+- **Editor / Standalone** — an explicit Google Identity Services (GIS) browser flow served through a local `HttpListener`, without a client secret.
 
 There is no compiled artifact in this repo: no `.aar`, no prebuilt library, no gradle wrapper. Unity/Gradle/Xcode compile the Java and Objective-C++ sources in-place inside the consuming project.
 
@@ -74,25 +74,29 @@ for m in $(git ls-files | grep '\.meta$'); do [ -e "${m%.meta}" ] || echo "ORPHA
 
 **The sample's method names are load-bearing.** `SampleScene.unity` wires buttons to `OnSignIn`, `OnSignOut`, `OnDisconnect`, `OnSignInSilently` and `OnGamesSignIn` through serialized `UnityEvent` entries that match by string. Renaming one silently breaks its button — nothing fails at compile time. The scene also stores a `m_TargetAssemblyTypeName` per binding, so moving the class into a namespace requires updating those entries too.
 
-**`WebClientId` is required on every platform**, including Android — the CredentialManager migration made the *web* client ID mandatory (`setServerClientId`). An Android client ID will not work. `ClientSecret` exists only under `#if UNITY_EDITOR || UNITY_STANDALONE` because the desktop flow ships the secret in the app.
+**`WebClientId` is required on every platform**, including Android — CredentialManager uses it as the server client ID. Editor/Standalone also uses this Web application client ID through GIS, without a client secret. `DesktopLoginPort` defaults to 49215; consumers must register `http://localhost` and `http://localhost:49215` as authorized JavaScript origins (adjust the latter if the configured port changes).
 
-**Do not reintroduce `System.Web`.** The Editor/Standalone flow used to call `HttpUtility.ParseQueryString`, which forced consumers to set Api Compatibility Level to `.NET Framework`. It was replaced by a local `ParseQueryString` helper in `Runtime/Impl/GoogleSignInImplEditor.cs`. The package must keep building under the default `.NET Standard 2.1` — that is the regression to protect.
+**Platform-specific configuration options.** `AccountName` is an optional user ID/email hint: iOS forwards it as `hint` and clears the stored hint for null/empty configuration; Editor/Standalone forwards it as GIS `login_hint`. Android retains the shared argument but ignores it because the credential request API has no account-name hint. Never pass an account name to `setNonce`. The desktop flow generates its own random nonce independently.
+
+`HidePopups` is Android-only: both entry points pass it to `setPreferImmediatelyAvailableCredentials`; `SignIn()` also passes it to `setFilterByAuthorizedAccounts` and `setAutoSelectEnabled`. It does not guarantee that no UI appears and is not dependent on `UseGameSignIn`. iOS and Editor/Standalone ignore it. Keep its current behavior when changing unrelated sign-in code.
+
+**Do not reintroduce `System.Web`.** The runtime package must remain compatible with `.NET Standard 2.1`. The desktop GIS flow uses JSON callbacks rather than the old authorization-code query parser.
 
 ## Architecture
 
 ```
 GoogleSignIn (static facade, Google namespace)
   └─ ISignInImpl ──┬── GoogleSignInImpl        Android JNI  /  iOS __Internal
-                   └── GoogleSignInImplEditor  Editor + Standalone OAuth loopback
+                   └── GoogleSignInImplEditor  Editor + Standalone GIS loopback
   Future<T> ──┬── FutureAPIImpl<T> ──┬── NativeFuture : BaseObject  (polls native)
-              │                      └── GoogleSignInImplEditor     (self-implements)
+              │                      └── SignInResult              (one per desktop request)
               └── WaitForResult / WaitForResultAsync → TaskCompletionSource<T>
   SignInHelperObject : MonoBehaviour   hidden DontDestroyOnLoad coroutine runner
 ```
 
 ### Implementation selection is order-sensitive
 
-`Runtime/GoogleSignIn.cs:88-95` checks `#if UNITY_EDITOR || UNITY_STANDALONE` **before** `#elif UNITY_ANDROID || UNITY_IOS`. Consequence: **play mode always runs the desktop OAuth flow**, even with the build target set to Android or iOS. Native paths can only be exercised in a real device build. Keep this in mind before concluding a native change "works".
+`Runtime/GoogleSignIn.cs:88-95` checks `#if UNITY_EDITOR || UNITY_STANDALONE` **before** `#elif UNITY_ANDROID || UNITY_IOS`. Consequence: **play mode always runs the desktop GIS flow**, even with the build target set to Android or iOS. Native paths can only be exercised in a real device build. Keep this in mind before concluding a native change "works".
 
 ### Async model
 
@@ -105,23 +109,23 @@ GoogleSignIn.DefaultInstance.SignIn()
   .ContinueWith(OnAuthenticationFinished, TaskScheduler.FromCurrentSynchronizationContext());
 ```
 
-### Two sign-in entry points, and why `SignInSilently` is gone
+### Explicit sign-in only
 
-`SignInLegacy()` always presents the account picker; `SignIn()` prefers an already authorized account and may complete with no UI at all. The older name `SignInSilently` was dropped because on Android it was never actually silent — `GetGoogleIdOption` still shows UI unless `HidePopups` is set.
+`SignIn()` and `SignInLegacy()` are explicit sign-in entry points. Only Android retains different credential request paths. Do not add silent restoration or cache-only login to the other platforms.
 
 | | `SignInLegacy()` | `SignIn()` |
 |---|---|---|
-| Android | `GetSignInWithGoogleOption` | `GetGoogleIdOption` (filter by authorized accounts, auto-select) |
-| iOS | `signInWithPresentingViewController` | `restorePreviousSignIn` |
-| Editor / Standalone | loopback OAuth flow | replay of the `SessionState` token cache |
+| Android | Existing `GetSignInWithGoogleOption` request | Existing `GetGoogleIdOption` request |
+| iOS | `signInWithPresentingViewController` | Delegates to `GoogleSignIn_SignInLegacy` |
+| Editor / Standalone | Interactive localhost GIS page | Delegates to `SignInLegacy()` |
 
-The reference fork this mirrors collapsed both into the interactive call on iOS and in the editor, orphaning `restorePreviousSignIn`. That was not copied — here the two paths stay genuinely different on every backend.
+All Task, Async and Future variants use these same underlying methods. `SUCCESS_CACHE` and its handling in the shared `Future<T>` bridge remain for compatibility, but the desktop implementation does not return cached results. The sample's historical `OnSignInSilently` method name is retained only for serialized scene bindings; it calls the explicit `SignIn()` API.
 
 ### Android (`Runtime/Impl/GoogleSignInImpl.cs:98-229`)
 
 Pure JNI, **no `UnitySendMessage` anywhere in the repo**. C# calls the all-static Java class `com.google.googlesignin.GoogleSignInHelper` (`Plugins/Android/src/main/java/com/google/googlesignin/GoogleSignInHelper.java`, made static so sign-in can repeat), and receives results through `SignInListener : AndroidJavaProxy` implementing `IListener`.
 
-`configure()` only builds and stores a closure; `signIn()`/`signInSilently()` invoke it. The flow is two chained calls: `CredentialManager.getCredentialAsync` (`GetSignInWithGoogleOption` interactive, `GetGoogleIdOption` silent) → `onAuthenticated`, then `Identity.getAuthorizationClient().authorize()` with `requestOfflineAccess` → `onAuthorized` for the server auth code.
+`configure()` only builds and stores a closure; `signInLegacy()`/`signIn()` invoke it with different options. The flow is two chained calls: `CredentialManager.getCredentialAsync` (`GetSignInWithGoogleOption` or `GetGoogleIdOption`) → `onAuthenticated`, then `Identity.getAuthorizationClient().authorize()` with `requestOfflineAccess` → `onAuthorized` for the server auth code.
 
 Two consequences worth knowing: results are cached in **static** fields (`googleIdTokenCredential`, `authorizationResult`) and the `Get*` accessors ignore their `HandleRef` argument entirely, so Android is effectively single-flight. And `GoogleIdTokenCredential` no longer exposes a numeric user ID, so `GoogleSignIn_GetUserId` base64url-decodes the id token's JWT payload and reads `sub` via Newtonsoft — that is why Newtonsoft.Json is a hard runtime dependency.
 
@@ -135,9 +139,11 @@ The app controller is **not** hooked with `IMPL_APP_CONTROLLER_SUBCLASS`. `Googl
 
 ### Editor / Standalone (`Runtime/Impl/GoogleSignInImplEditor.cs`)
 
-No native code. `BindLocalHostFirstAvailablePort()` opens an `HttpListener` on `http://localhost:{port}/` starting at port 49215 — Windows enumerates active TCP listeners, macOS walks sequentially, other platforms try 10 random ports. `Application.OpenURL` sends the user to Google's auth endpoint, the redirect is caught on the listener and parsed by the local `ParseQueryString` helper, then the code is exchanged at `oauth2/v4/token` and profile fields are read from `openidconnect.googleapis.com/v1/userinfo`.
+Both entry points start the same explicit GIS flow. An `HttpListener` serves a temporary local page on the configured fixed `DesktopLoginPort` (default 49215), and `Application.OpenURL` opens it in the system browser. The page uses `google.accounts.id.initialize` and `renderButton` in popup mode; it does not use One Tap. The callback posts its ID-token `credential` to the listener. No authorization-code exchange, client secret or user-info API request is used. `RequestAuthCode` is rejected with `DEVELOPER_ERROR`.
 
-Deliberate limitations to keep in mind before "fixing" them piecemeal: **no PKCE, no `state` parameter**, scopes hardcoded to `openid email profile` (so `AdditionalScopes` is ignored), and **no refresh-token handling at all**. `SignInSilently()` replays a cached `access_token` from `UnityEditor.SessionState` (key `googleSignInCache`) and reports `SUCCESS_CACHE`, so it stops working once the token expires. `SessionState` is in-memory: it survives domain reloads but dies with the editor process, and under plain `UNITY_STANDALONE` the caching and silent paths are not implemented.
+Requests use a random session path and nonce, require same-origin loopback callbacks, and check JWT issuer, audience and expiry. JWT parsing is not signature verification: the consuming backend must verify the original token. `RequestIdToken`, `RequestEmail` and `RequestProfile` control returned fields. Never log the token.
+
+There is no token cache or silent restore. `ForceTokenRefresh` has no effect on Editor/Standalone. Results are held in a per-request `SignInResult`, and a second concurrent request is rejected. A request finishes on success, error, explicit cancellation or a 120-second timeout and closes its listener. Network work avoids the Unity synchronization context; result completion returns to it. `SignOut()` cancels a pending request, and shutdown/domain reload also cancels it. `Disconnect()` remains unimplemented; it must not be documented as Google grant revocation.
 
 ## Cross-boundary contracts
 
@@ -181,11 +187,8 @@ The layout is OpenUPM-compatible — OpenUPM auto-discovers a `package.json` in 
 Pre-existing, not introduced by recent work — worth flagging rather than silently inheriting:
 
 - `Runtime/link.xml` declares the type as `UnityEngine.AndroidJNIModule.AndroidJavaObject`, but `AndroidJNIModule` is the **assembly**, not a namespace; the real type is `UnityEngine.AndroidJavaObject`. As written the rule matches nothing and the IL2CPP preservation is silently inert — which is likely why the discarded-tuple hack in `NativeFuture.cs` exists to defeat tree-shaking.
-- `Runtime/GoogleSignIn.cs:52-56` logs "This platform is not supported" on Standalone/Editor targets that *are* supported by `GoogleSignInImplEditor`.
-- `Disconnect()` and `EnableDebugLogging()` throw `NotImplementedException` on the editor impl.
+- `Disconnect()` throws `NotImplementedException` on the editor impl; `EnableDebugLogging()` logs status codes only.
 - Java `getStatus()` maps `NoCredentialException` to `DEVELOPER_ERROR`. `SIGN_IN_REQUIRED` would describe "no Google account on the device" better, but the mapping is kept to match the fork it came from.
-- The editor `HttpListener` is never stopped or disposed — one leak per sign-in attempt.
-- `GoogleSignInImplEditor` keeps `Pending`/`Status`/`Result` as instance state on a singleton, so concurrent `SignIn()` and `SignInSilently()` clobber each other.
 - The lower half of the package `README.md` is explicitly marked as upstream reference text and is partly outdated.
 
 ## Contributing

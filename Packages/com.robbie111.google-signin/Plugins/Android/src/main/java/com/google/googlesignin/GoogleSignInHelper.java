@@ -127,11 +127,11 @@ public class GoogleSignInHelper {
    *                           server auth code.
    * @param requestEmail       - true if email address of the user is requested.
    * @param requestIdToken     - true if an id token for the user is requested.
-   * @param hideUiPopups       - true if the popups during sign-in from the Games
-   *                           API should be hidden.
-   *                           This only has affect if useGamesConfig is true.
-   * @param defaultAccountName - the account name to attempt to default to when
-   *                           signing in.
+   * @param hideUiPopups       - prefer immediately available credentials; the
+   *                           non-legacy path also filters to authorized accounts
+   *                           and permits automatic selection. UI may still appear.
+   * @param defaultAccountName - retained for the shared configuration contract;
+   *                           account hints are unsupported and ignored on Android.
    * @param additionalScopes   - additional API scopes to request when
    *                           authenticating.
    * @param requestHandle      - the handle to this request, created by the native
@@ -174,8 +174,8 @@ public class GoogleSignInHelper {
                   .setFilterByAuthorizedAccounts(hideUiPopups)
                   .setAutoSelectEnabled(hideUiPopups);
 
-          if(defaultAccountName != null)
-            getGoogleIdOptionBuilder.setNonce(defaultAccountName);
+          // Account-name hints are unsupported by this request API.
+          // Do not map defaultAccountName to nonce: it is not an account selector.
 
           if(!Strings.isEmptyOrWhitespace(webClientId))
             getGoogleIdOptionBuilder.setServerClientId(webClientId);

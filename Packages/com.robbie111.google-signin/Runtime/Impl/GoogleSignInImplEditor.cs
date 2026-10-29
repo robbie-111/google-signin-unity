@@ -373,12 +373,15 @@ namespace Google.Impl
         sealed class Settings
         {
             public readonly string ClientId;
+            public readonly string AccountName;
             public readonly int Port;
             public readonly bool RequestIdToken, RequestEmail, RequestProfile;
 
             public Settings(GoogleSignInConfiguration configuration)
             {
                 ClientId = configuration.WebClientId.Trim();
+                AccountName = string.IsNullOrWhiteSpace(configuration.AccountName)
+                    ? null : configuration.AccountName.Trim();
                 Port = configuration.DesktopLoginPort;
                 RequestIdToken = configuration.RequestIdToken;
                 RequestEmail = configuration.RequestEmail;
@@ -460,6 +463,7 @@ namespace Google.Impl
             var settings = JsonConvert.SerializeObject(new
             {
                 clientId = request.Settings.ClientId,
+                accountName = request.Settings.AccountName,
                 nonce = request.Nonce,
                 callbackPath = request.PagePath,
                 timeout = LoginTimeoutMilliseconds
@@ -549,6 +553,7 @@ h1 { font-size: 22px; } #google-button { display: flex; justify-content: center;
     try {
       google.accounts.id.initialize({
         client_id: settings.clientId, nonce: settings.nonce,
+        login_hint: settings.accountName || undefined,
         callback: receiveCredential, ux_mode: 'popup', auto_select: false
       });
       google.accounts.id.renderButton(button, { theme: 'outline', size: 'large', width: 300, locale: 'ko' });

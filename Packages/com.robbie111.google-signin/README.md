@@ -39,8 +39,7 @@ silent or cache-only login API.
 
 Editor and Windows/macOS/Linux standalone players use Google Identity Services (GIS)
 in the system browser. Set `WebClientId` to an OAuth client of type **Web application**
-and set `RequestIdToken = true`. A client secret is not required; the legacy
-`ClientSecret` field is retained for source compatibility but is ignored.
+and set `RequestIdToken = true`. A client secret is not required.
 
 In Google Cloud Console, add both entries to **Authorized JavaScript origins**:
 
@@ -84,6 +83,23 @@ request paths; both iOS methods call `signInWithPresentingViewController`.
 References: [GIS setup](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid),
 [JavaScript API](https://developers.google.com/identity/gsi/web/reference/js-reference),
 [server-side ID-token verification](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token).
+
+### Account hints and Android selection options
+
+| Option | Android | iOS | Editor / desktop |
+|---|---|---|---|
+| `AccountName` | Unsupported; ignored by both entry points | Optional user ID/email `hint` | Optional GIS `login_hint` |
+| `HidePopups` | Credential Manager selection options described below | Ignored | Ignored |
+
+`AccountName` is a hint, not a restriction to a specific account. Null or empty
+means no hint; setting it to either clears the previous hint during iOS
+configuration. Account names are never passed as ID-token nonces.
+
+On Android, `HidePopups = true` sets `preferImmediatelyAvailableCredentials` for
+both entry points. For `SignIn()`, it also sets `filterByAuthorizedAccounts` and
+`autoSelectEnabled` to true, so only previously authorized accounts are eligible
+and automatic selection may occur. It does not guarantee that all UI is hidden.
+The default is false; this option is not tied to `UseGameSignIn`.
 
 ## Installation
 

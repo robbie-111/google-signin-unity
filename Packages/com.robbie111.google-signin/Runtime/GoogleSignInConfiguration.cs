@@ -31,9 +31,6 @@ namespace Google {
     /// </remarks>
     public bool UseGameSignIn = false;
 #if UNITY_EDITOR || UNITY_STANDALONE
-    /// <summary>Legacy field retained for source compatibility.</summary>
-    /// <remarks>Ignored. Editor and desktop GIS sign-in does not require a client secret.</remarks>
-    public string ClientSecret = null;
     /// <summary>Fixed localhost port for the Editor and desktop GIS login page.</summary>
     /// <remarks>Register http://localhost and http://localhost:PORT as authorized
     /// JavaScript origins for WebClientId. An occupied port fails sign-in;
@@ -60,15 +57,16 @@ namespace Google {
     public bool RequestIdToken = false;
     /// <summary>Request profile information, requires consent.</summary>
     public bool RequestProfile = true;
-    /// <summary>Hides popup UIs from games services.</summary>
-    /// <remarks>Used with games signin to show or hide the connecting popup UI
-    /// and to associate an invisible view for other popups.  This is
-    /// recommended for VR applications.  This has no effect if UseGameSignIn is
-    /// false.
+    /// <summary>Controls Android Credential Manager account selection behavior.</summary>
+    /// <remarks>Both Android sign-in methods prefer immediately available credentials
+    /// when true. SignIn also filters to authorized accounts and permits automatic
+    /// selection. This does not guarantee that every popup is hidden.
+    /// Ignored on iOS, Editor and desktop. Defaults to false.
     /// </remarks>
     public bool HidePopups = false;
-    /// <summary>Account name to use when authenticating,
-    ///  null indicates use default.</summary>
+    /// <summary>Optional user ID or email hint for iOS and Editor/desktop sign-in.</summary>
+    /// <remarks>Null or empty means no hint. The hint does not enforce an account.
+    /// Unsupported and ignored on Android; it is never used as an ID-token nonce.</remarks>
     public string AccountName = null;
     /// <summary>Additional scopes to request, requires consent.</summary>
     public IEnumerable<string> AdditionalScopes = null;

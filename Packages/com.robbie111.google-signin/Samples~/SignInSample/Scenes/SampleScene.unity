@@ -915,7 +915,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   statusText: {fileID: 1237532910}
   webClientId: <your client id here>
-  clientSecret: 
 --- !u!1 &1093485899
 GameObject:
   m_ObjectHideFlags: 0

@@ -5,6 +5,22 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Removed
+
+- **Breaking — `GoogleSignInConfiguration.ClientSecret` was removed.** Editor/desktop GIS sign-in does not use a client secret. Remove any `ClientSecret` assignments from consumer code. The obsolete serialized sample-scene field was also removed.
+
+### Fixed
+
+- Android no longer passes `AccountName` as an ID-token nonce. Account-name hints are unsupported by the current Android request API and are ignored.
+- iOS clears an existing account hint when configured with a null or empty `AccountName`.
+- Updated `HidePopups` documentation to describe its Android Credential Manager behavior rather than the obsolete Games popup behavior. Its behavior is unchanged; iOS and Editor/desktop ignore it.
+
+### Added
+
+- Editor/desktop GIS sign-in now passes an optional `AccountName` as `login_hint`. Both sign-in entry points use the same hint handling; no hint is sent for an unset value.
+
 ## [1.0.0]
 
 First release under the new package id and repository layout.

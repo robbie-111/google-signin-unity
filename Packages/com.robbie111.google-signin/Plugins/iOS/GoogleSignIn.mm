@@ -218,9 +218,9 @@ bool GoogleSignIn_Configure(void *unused, bool useGameSignIn,
         [GoogleSignInHandler sharedInstance]->additionalScopes = tmpary;
     }
 
-    if (accountName) {
-      [GoogleSignInHandler sharedInstance]->loginHint = [NSString stringWithUTF8String:accountName];
-    }
+    [GoogleSignInHandler sharedInstance]->loginHint =
+        (accountName && accountName[0] != '\0')
+            ? [NSString stringWithUTF8String:accountName] : nil;
 
     return !useGameSignIn;
 }
